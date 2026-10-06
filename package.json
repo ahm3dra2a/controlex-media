@@ -1,0 +1,37 @@
+{
+  "name": "controlex-media",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "assets": "node scripts/build.mjs",
+    "dev": "node scripts/dev.mjs",
+    "db:local": "node scripts/wrangler.mjs d1 migrations apply controlex-local --local --env local",
+    "db:remote": "node scripts/wrangler.mjs d1 migrations apply controlex --remote --env=\"\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "vitest run",
+    "test:db": "python3 tests/database.py",
+    "test:smoke": "node tests/smoke.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "build": "npm run assets && node scripts/wrangler.mjs deploy --env=\"\" --dry-run --outdir dist/worker",
+    "deploy": "node scripts/preflight.mjs && npm run assets && node scripts/wrangler.mjs deploy --env=\"\""
+  },
+  "dependencies": {
+    "hono": "4.13.13",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@cloudflare/workers-types": "5.20261006.1",
+    "esbuild": "0.28.2",
+    "playwright-core": "1.63.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3",
+    "wrangler": "4.147.0"
+  }
+}

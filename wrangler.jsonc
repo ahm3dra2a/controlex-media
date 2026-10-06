@@ -1,0 +1,40 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "controlex-media",
+  "main": "src/index.tsx",
+  "compatibility_date": "2026-10-06",
+  "assets": { "directory": "./dist/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true, "head_sampling_rate": 0.1 },
+  "vars": {
+    "ENVIRONMENT": "production",
+    "SITE_URL": "https://example.invalid",
+    "TURNSTILE_SITE_KEY": ""
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "controlex",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "env": {
+    "local": {
+      "name": "controlex-media-local",
+      "vars": {
+        "ENVIRONMENT": "local",
+        "SITE_URL": "http://localhost:8787",
+        "ALLOW_LOCAL_INQUIRIES": "true",
+        "TURNSTILE_SITE_KEY": ""
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "controlex-local",
+          "database_id": "00000000-0000-0000-0000-000000000001",
+          "migrations_dir": "migrations"
+        }
+      ]
+    }
+  }
+}
