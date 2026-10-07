@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { safeExternalUrl } from "../src/data/content";
-import app from "../src/index";
+import { app } from "../src/index";
 import {
   canSkipTurnstile,
   inquirySchema,
@@ -135,7 +135,7 @@ describe("inquiry security boundary", () => {
         },
         production,
       );
-      expect(response.status).toBe(503);
+      expect(response.status).toBe(401);
       expect(response.headers.get("Content-Security-Policy")).toContain(
         "frame-ancestors 'none'",
       );

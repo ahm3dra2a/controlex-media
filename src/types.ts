@@ -6,6 +6,12 @@ export type Bindings = {
   ALLOW_LOCAL_INQUIRIES?: string;
   TURNSTILE_SITE_KEY?: string;
   TURNSTILE_SECRET_KEY?: string;
+  ACCESS_TEAM_DOMAIN?: string;
+  ACCESS_AUD?: string;
+  LOCAL_ADMIN_EMAIL?: string;
+  LOCAL_ADMIN_PASSWORD_HASH?: string;
+  LOCAL_SESSION_SECRET?: string;
+  MEDIA?: R2Bucket;
 };
 
 export type Service = {
@@ -16,6 +22,10 @@ export type Service = {
   content: string;
   icon: string;
   sort_order: number;
+  media_id?: string | null;
+  price_minor?: number | null;
+  currency?: string;
+  cta_label?: string;
   seo_title: string | null;
   seo_description: string | null;
 };
@@ -30,6 +40,16 @@ export type Project = {
   results: string;
   is_concept: number;
   art: string;
+  cover_media_id?: string | null;
+  media_json: string;
+  services?: string[];
+  seo_title?: string | null;
+  seo_description?: string | null;
+  client?: string;
+  industry?: string;
+  technologies_json?: string;
+  external_url?: string;
+  testimonial?: string;
 };
 export type Package = {
   id: string;
@@ -40,6 +60,7 @@ export type Package = {
   features_json: string;
   recommended: number;
   payment_mode: string;
+  cta_label?: string;
 };
 export type Faq = { id: string; question: string; answer: string };
 export type Social = {
@@ -55,4 +76,11 @@ export type SiteContent = {
   packages: Package[];
   faqs: Faq[];
   socials: Social[];
+  testimonials: {
+    id: string;
+    name: string;
+    company: string;
+    quote: string;
+    media_id: string | null;
+  }[];
 };

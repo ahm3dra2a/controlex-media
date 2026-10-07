@@ -11,14 +11,29 @@
       "!test-results"
     ]
   },
-  "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2 },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf"
+  },
   "linter": {
     "enabled": true,
     "rules": {
       "preset": "recommended",
-      "style": { "noDescendingSpecificity": "off" }
+      "style": {
+        "noDescendingSpecificity": "off"
+      }
     }
   },
-  "javascript": { "formatter": { "quoteStyle": "double" } },
-  "css": { "parser": { "cssModules": false } }
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double"
+    }
+  },
+  "css": {
+    "parser": {
+      "cssModules": false
+    }
+  }
 }

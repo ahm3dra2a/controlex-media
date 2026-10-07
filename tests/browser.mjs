@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
-import { chromium } from "playwright-core";
+import { launchBrowser } from "../scripts/browser.mjs";
 
 const base = process.env.TEST_BASE_URL || "http://localhost:8787";
 assert(["localhost", "127.0.0.1"].includes(new URL(base).hostname));
@@ -9,11 +9,7 @@ assert.equal(
   "local",
 );
 await mkdir("test-results", { recursive: true });
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
-  headless: true,
-  args: ["--no-sandbox"],
-});
+const browser = await launchBrowser();
 try {
   const page = await browser.newPage();
   const errors = [];

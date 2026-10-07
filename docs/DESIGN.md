@@ -1,3 +1,5 @@
+> Historical Phase 1 notes. For the revised CMS/design and current results, see [README](../README.md) and [validation](VALIDATION.md).
+
 # Original design system
 
 Direction: **Next move.** An editorial creative studio, with oversized purposeful type, asymmetric work cards, quiet surfaces and a distinctive concentric orange/black motif. All artwork and layout were created for this project. The inspiration site was inaccessible; no claim is made that it was visually inspected.

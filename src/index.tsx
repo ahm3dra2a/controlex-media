@@ -1,7 +1,9 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
-import { secureHeaders } from "hono/secure-headers";
-import { loadContent } from "./data/content";
+import { NONCE, secureHeaders } from "hono/secure-headers";
+import { admin } from "./admin/routes";
+import { loadContent, safeExternalUrl } from "./data/content";
+import { publicRoutes } from "./public";
 import {
   canSkipTurnstile,
   consumeLimit,
@@ -15,14 +17,14 @@ import { Arrow, ContactBanner, Layout, ProjectArt } from "./views/components";
 import { Contact, ThankYou } from "./views/contact";
 import { Home } from "./views/home";
 
-const app = new Hono<{ Bindings: Bindings }>();
+export const app = new Hono<{ Bindings: Bindings }>();
 
 app.use(
   "*",
   secureHeaders({
     contentSecurityPolicy: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://challenges.cloudflare.com"],
+      scriptSrc: [NONCE, "'self'", "https://challenges.cloudflare.com"],
       styleSrc: ["'self'"],
       imgSrc: ["'self'", "data:"],
       fontSrc: ["'self'"],
@@ -48,7 +50,7 @@ app.get("/api/health", async (c) => {
   return c.json({
     status: "ok",
     database: "reachable",
-    phase: 1,
+    phase: 2,
     environment: c.env.ENVIRONMENT,
   });
 });
@@ -65,6 +67,7 @@ app.get("/", async (c) => {
   const content = await loadContent(c.env.DB);
   return c.html(
     <Layout
+      nonce={c.get("secureHeadersNonce")}
       content={content}
       siteUrl={c.env.SITE_URL}
       title={content.settings.seo_title}
@@ -83,6 +86,7 @@ app.get("/services/:slug", async (c) => {
   if (!service) return c.notFound();
   return c.html(
     <Layout
+      nonce={c.get("secureHeadersNonce")}
       content={content}
       siteUrl={c.env.SITE_URL}
       path={`/services/${service.slug}`}
@@ -98,6 +102,22 @@ app.get("/services/:slug", async (c) => {
         <p class="eyebrow">What we do</p>
         <h1>{service.title}</h1>
         <p class="standfirst">{service.short_description}</p>
+        {service.media_id && (
+          <img
+            class="service-image"
+            src={`/media/${service.media_id}`}
+            alt={service.title}
+          />
+        )}
+        {service.price_minor !== null && service.price_minor !== undefined && (
+          <p class="standfirst">
+            From{" "}
+            {new Intl.NumberFormat("en", {
+              style: "currency",
+              currency: service.currency || "PKR",
+            }).format(service.price_minor / 100)}
+          </p>
+        )}
         <div class="prose">
           {service.content
             .replaceAll("\\n", "\n")
@@ -106,8 +126,14 @@ app.get("/services/:slug", async (c) => {
               <p key={paragraph}>{paragraph}</p>
             ))}
         </div>
+        <a
+          class="button button-outline"
+          href={`/services/${service.slug}/showcase`}
+        >
+          Explore this service’s showcase <Arrow diagonal />
+        </a>
         <a class="button button-orange" href={`/contact?service=${service.id}`}>
-          Discuss your project <Arrow diagonal />
+          {service.cta_label || "Discuss your project"} <Arrow diagonal />
         </a>
       </section>
       <ContactBanner content={content} />
@@ -125,14 +151,20 @@ app.get("/work/:slug", async (c) => {
   if (!project) return c.notFound();
   return c.html(
     <Layout
+      nonce={c.get("secureHeadersNonce")}
       content={content}
       siteUrl={c.env.SITE_URL}
       path={`/work/${project.slug}`}
-      title={`${project.title} — ${content.settings.brand_name}`}
-      description={project.summary}
+      title={
+        project.seo_title || `${project.title} — ${content.settings.brand_name}`
+      }
+      description={project.seo_description || project.summary}
+      ogImage={
+        project.cover_media_id ? `/media/${project.cover_media_id}` : undefined
+      }
     >
       <section class="section wrap case-page">
-        <a class="text-link" href="/#work">
+        <a class="text-link" href="/work">
           ← Back to our thinking
         </a>
         <p class="eyebrow">
@@ -141,7 +173,26 @@ app.get("/work/:slug", async (c) => {
         </p>
         <h1>{project.title}</h1>
         <p class="standfirst">{project.summary}</p>
+        <div class="case-details">
+          {project.client && <span>Client / {project.client}</span>}
+          {project.industry && <span>Industry / {project.industry}</span>}
+          {(JSON.parse(project.technologies_json || "[]") as string[]).map(
+            (tech) => (
+              <span key={tech}>{tech}</span>
+            ),
+          )}
+        </div>
         <ProjectArt project={project} />
+        <div class="case-gallery">
+          {(JSON.parse(project.media_json || "[]") as string[]).map((id, i) => (
+            <img
+              key={id}
+              src={`/media/${id}`}
+              alt={`${project.title} — detail ${i + 1}`}
+              loading="lazy"
+            />
+          ))}
+        </div>
         <div class="case-grid">
           {[
             { title: "The question", body: project.problem },
@@ -154,6 +205,19 @@ app.get("/work/:slug", async (c) => {
             </div>
           ))}
         </div>
+        {project.testimonial && (
+          <blockquote class="case-quote">{project.testimonial}</blockquote>
+        )}
+        {project.external_url && safeExternalUrl(project.external_url) && (
+          <a
+            class="button button-outline showcase-more"
+            href={safeExternalUrl(project.external_url) || ""}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Visit the project <Arrow diagonal />
+          </a>
+        )}
       </section>
       <ContactBanner content={content} />
     </Layout>,
@@ -167,6 +231,7 @@ app.get("/contact", async (c) => {
     local || Boolean(c.env.TURNSTILE_SITE_KEY && c.env.TURNSTILE_SECRET_KEY);
   return c.html(
     <Layout
+      nonce={c.get("secureHeadersNonce")}
       content={content}
       siteUrl={c.env.SITE_URL}
       path="/contact"
@@ -203,6 +268,7 @@ app.post("/api/inquiries", async (c) => {
   const fail = (message: string) =>
     c.html(
       <Layout
+        nonce={c.get("secureHeadersNonce")}
         content={content}
         siteUrl={c.env.SITE_URL}
         path="/contact"
@@ -276,6 +342,7 @@ app.get("/thank-you", async (c) => {
   const content = await loadContent(c.env.DB);
   return c.html(
     <Layout
+      nonce={c.get("secureHeadersNonce")}
       content={content}
       siteUrl={c.env.SITE_URL}
       path="/thank-you"
@@ -290,8 +357,41 @@ app.get("/thank-you", async (c) => {
 
 app.get("/privacy", async (c) => {
   const content = await loadContent(c.env.DB);
+  const page = await c.env.DB.prepare(
+    "SELECT title,blocks_json,seo_title,seo_description FROM pages WHERE slug=? AND status='published' AND archived_at IS NULL",
+  )
+    .bind("privacy")
+    .first<{
+      title: string;
+      blocks_json: string;
+      seo_title: string;
+      seo_description: string;
+    }>();
+  if (page)
+    return c.html(
+      <Layout
+        nonce={c.get("secureHeadersNonce")}
+        content={content}
+        siteUrl={c.env.SITE_URL}
+        path="/privacy"
+        title={page.seo_title || page.title}
+        description={page.seo_description || page.title}
+      >
+        <section class="section wrap simple-page">
+          <h1>{page.title}</h1>
+          <div class="prose">
+            {(JSON.parse(page.blocks_json) as { text: string }[]).map(
+              (block, i) => (
+                <p key={`${i}`}>{block.text}</p>
+              ),
+            )}
+          </div>
+        </section>
+      </Layout>,
+    );
   return c.html(
     <Layout
+      nonce={c.get("secureHeadersNonce")}
       content={content}
       siteUrl={c.env.SITE_URL}
       path="/privacy"
@@ -331,8 +431,41 @@ app.get("/privacy", async (c) => {
 
 app.get("/terms", async (c) => {
   const content = await loadContent(c.env.DB);
+  const page = await c.env.DB.prepare(
+    "SELECT title,blocks_json,seo_title,seo_description FROM pages WHERE slug=? AND status='published' AND archived_at IS NULL",
+  )
+    .bind("terms")
+    .first<{
+      title: string;
+      blocks_json: string;
+      seo_title: string;
+      seo_description: string;
+    }>();
+  if (page)
+    return c.html(
+      <Layout
+        nonce={c.get("secureHeadersNonce")}
+        content={content}
+        siteUrl={c.env.SITE_URL}
+        path="/terms"
+        title={page.seo_title || page.title}
+        description={page.seo_description || page.title}
+      >
+        <section class="section wrap simple-page">
+          <h1>{page.title}</h1>
+          <div class="prose">
+            {(JSON.parse(page.blocks_json) as { text: string }[]).map(
+              (block, i) => (
+                <p key={`${i}`}>{block.text}</p>
+              ),
+            )}
+          </div>
+        </section>
+      </Layout>,
+    );
   return c.html(
     <Layout
+      nonce={c.get("secureHeadersNonce")}
       content={content}
       siteUrl={c.env.SITE_URL}
       path="/terms"
@@ -365,7 +498,7 @@ app.get("/terms", async (c) => {
 
 app.get("/robots.txt", (c) =>
   c.text(
-    `User-agent: *\n${c.env.ENVIRONMENT === "local" ? "Disallow: /" : "Allow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /thank-you"}\nSitemap: ${new URL("/sitemap.xml", c.env.SITE_URL).href}\n`,
+    `User-agent: *\n${c.env.ENVIRONMENT === "local" ? "Disallow: /" : "Allow: /\nDisallow: /admin\nDisallow: /api/\nDisallow: /thank-you\nDisallow: /invoice/"}\nSitemap: ${new URL("/sitemap.xml", c.env.SITE_URL).href}\n`,
   ),
 );
 app.get("/sitemap.xml", async (c) => {
@@ -373,11 +506,33 @@ app.get("/sitemap.xml", async (c) => {
   const projects = await c.env.DB.prepare(
     "SELECT slug FROM projects WHERE status = 'published' AND archived_at IS NULL",
   ).all<{ slug: string }>();
+  const pages = await c.env.DB.prepare(
+    "SELECT slug FROM pages WHERE status='published' AND archived_at IS NULL",
+  ).all<{ slug: string }>();
+  const posts = await c.env.DB.prepare(
+    "SELECT slug FROM posts WHERE status='published' AND archived_at IS NULL",
+  ).all<{ slug: string }>();
   const paths = [
     "/",
     "/contact",
+    "/work",
+    ...pages.results.map((page) =>
+      ["privacy", "terms"].includes(page.slug)
+        ? `/${page.slug}`
+        : `/page/${page.slug}`,
+    ),
+    ...posts.results.map((post) => `/insights/${post.slug}`),
     ...content.services.map(
       (service) => `/services/${encodeURIComponent(service.slug)}`,
+    ),
+    ...pages.results.map((page) =>
+      ["privacy", "terms"].includes(page.slug)
+        ? `/${page.slug}`
+        : `/page/${page.slug}`,
+    ),
+    ...posts.results.map((post) => `/insights/${post.slug}`),
+    ...content.services.map(
+      (service) => `/services/${encodeURIComponent(service.slug)}/showcase`,
     ),
     ...projects.results.map(
       (project) => `/work/${encodeURIComponent(project.slug)}`,
@@ -389,21 +544,17 @@ app.get("/sitemap.xml", async (c) => {
   );
 });
 
-// Fail closed. No fake login, development administrator or public registration.
-app.all("/admin", (c) =>
-  c.text("Administrator access has not been configured.", 503),
-);
-app.all("/admin/*", (c) =>
-  c.text("Administrator access has not been configured.", 503),
-);
+app.route("/admin", admin);
 app.all("/api/admin/*", (c) =>
-  c.text("Administrator access has not been configured.", 503),
+  c.text("Authentication required. Use the protected studio manager.", 401),
 );
+app.route("/", publicRoutes);
 
 app.notFound(async (c) => {
   const content = await loadContent(c.env.DB);
   return c.html(
     <Layout
+      nonce={c.get("secureHeadersNonce")}
       content={content}
       siteUrl={c.env.SITE_URL}
       title="Page not found — Controlex Media"
@@ -433,4 +584,11 @@ app.onError((error, c) => {
   );
 });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  async scheduled(_event: ScheduledController, env: Bindings) {
+    await env.DB.prepare("DELETE FROM rate_limits WHERE window < ?")
+      .bind(Math.floor(Date.now() / 600000) - 144)
+      .run();
+  },
+};

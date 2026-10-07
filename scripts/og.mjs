@@ -1,9 +1,6 @@
-import { chromium } from "playwright-core";
+import { launchBrowser } from "./browser.mjs";
 
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
-  args: ["--no-sandbox"],
-});
+const browser = await launchBrowser();
 try {
   const page = await browser.newPage({
     viewport: { width: 1200, height: 630 },

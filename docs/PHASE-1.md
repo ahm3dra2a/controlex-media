@@ -1,3 +1,5 @@
+> Historical Phase 1 notes. For the revised CMS/design and current results, see [README](../README.md) and [validation](VALIDATION.md).
+
 # Phase 1 review — 6 October 2026
 
 ## Implemented and verified in this cloud machine

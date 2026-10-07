@@ -26,6 +26,9 @@ export async function loadContent(db: Bindings["DB"]): Promise<SiteContent> {
     db.prepare(
       "SELECT * FROM social_links WHERE enabled = 1 AND archived_at IS NULL ORDER BY sort_order, id",
     ),
+    db.prepare(
+      "SELECT id,name,company,quote,media_id FROM testimonials WHERE status='published' AND archived_at IS NULL ORDER BY sort_order,id LIMIT 20",
+    ),
   ]);
   return {
     settings: Object.fromEntries(
@@ -39,6 +42,7 @@ export async function loadContent(db: Bindings["DB"]): Promise<SiteContent> {
     packages: result[3].results as Package[],
     faqs: result[4].results as Faq[],
     socials: result[5].results as Social[],
+    testimonials: result[6].results as SiteContent["testimonials"],
   };
 }
 

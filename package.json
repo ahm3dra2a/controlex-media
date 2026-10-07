@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=24.5.0"
   },
   "scripts": {
     "assets": "node scripts/build.mjs",
@@ -15,23 +15,36 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "vitest run",
-    "test:db": "python3 tests/database.py",
+    "test:db": "node --test tests/database.mjs",
     "test:smoke": "node tests/smoke.mjs",
     "test:browser": "node tests/browser.mjs",
     "build": "npm run assets && node scripts/wrangler.mjs deploy --env=\"\" --dry-run --outdir dist/worker",
-    "deploy": "node scripts/preflight.mjs && npm run assets && node scripts/wrangler.mjs deploy --env=\"\""
+    "deploy": "node scripts/preflight.mjs && npm run assets && node scripts/wrangler.mjs deploy --env=\"\"",
+    "browser:install": "playwright install chromium",
+    "admin:setup": "node scripts/admin-setup.mjs",
+    "test:admin": "node tests/admin.mjs",
+    "fonts": "node --use-env-proxy scripts/fonts.mjs"
   },
   "dependencies": {
     "hono": "4.13.13",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "jose": "6.2.12"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@cloudflare/workers-types": "5.20261006.1",
     "esbuild": "0.28.2",
-    "playwright-core": "1.63.0",
     "typescript": "5.9.3",
     "vitest": "5.0.3",
-    "wrangler": "4.147.0"
+    "wrangler": "4.148.0",
+    "playwright": "1.63.0"
+  },
+  "overrides": {
+    "sharp": "0.35.5"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "esbuild@0.28.2": true,
+    "workerd@1.20261006.1": true
   }
 }

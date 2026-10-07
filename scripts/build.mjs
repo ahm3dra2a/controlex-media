@@ -18,3 +18,16 @@ await build({
   minify: true,
   target: "es2022",
 });
+
+await build({
+  entryPoints: ["src/admin/client.ts"],
+  outfile: "dist/assets/admin.js",
+  bundle: true,
+  minify: true,
+  target: "es2022",
+});
+await build({
+  entryPoints: ["src/styles/admin.css"],
+  outfile: "dist/assets/admin.css",
+  minify: true,
+});

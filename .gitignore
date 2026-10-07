@@ -6,3 +6,5 @@ dist/
 .env*
 !.env.example
 test-results/
+
+public/fonts/*.woff2

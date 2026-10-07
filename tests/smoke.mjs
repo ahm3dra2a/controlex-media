@@ -16,6 +16,11 @@ assert.equal(health.database, "reachable");
 for (const path of [
   "/",
   "/contact",
+  "/work",
+  "/services/digital-growth/showcase",
+  "/theme.css",
+  "/admin.css",
+  "/admin.js",
   "/services/brand-strategy",
   "/work/a-clearer-storefront",
   "/privacy",
@@ -45,7 +50,10 @@ for (const path of [
   }
 }
 assert.equal((await fetch(`${base}/missing`)).status, 404);
-assert.equal((await fetch(`${base}/admin`)).status, 503);
+assert.equal(
+  (await fetch(`${base}/admin`, { redirect: "manual" })).status,
+  302,
+);
 assert.equal(
   (
     await fetch(`${base}/api/inquiries`, {

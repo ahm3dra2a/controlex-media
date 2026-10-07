@@ -11,6 +11,18 @@ await cp("public", "dist/assets", {
 });
 const contexts = await Promise.all([
   context({
+    entryPoints: ["src/admin/client.ts"],
+    outfile: "dist/assets/admin.js",
+    bundle: true,
+    minify: true,
+    target: "es2022",
+  }),
+  context({
+    entryPoints: ["src/styles/admin.css"],
+    outfile: "dist/assets/admin.css",
+    minify: true,
+  }),
+  context({
     entryPoints: ["src/styles/site.css"],
     outfile: "dist/assets/site.css",
     minify: true,
